@@ -31,7 +31,7 @@ module.exports = function (types) {
   // for faster error reporting
   var typeNames = Object.keys(types).join(' ')
   // and type to structure name lookup
-  var structureNames = R.mapObj(R.compose(R.head, Object.keys), types)
+  var structureNames = R.map(R.compose(R.head, Object.keys), types)
 
   return function prepareInput (input) {
     // default operation is add
