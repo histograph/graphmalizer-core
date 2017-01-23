@@ -3,3 +3,4 @@ _builds/
 _projects/
 _steps
 *.iml
+npm-debug.log

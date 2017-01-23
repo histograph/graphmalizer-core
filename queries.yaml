@@ -40,13 +40,13 @@ equivalence:
 
          OPTIONAL MATCH (s) -[:`«type»` * 0 .. 4]- (n:_)
             WHERE NOT n:_Rel // skip the relation nodes
-            
+
          WITH s, t, r, eq, collect(DISTINCT n) AS ns LIMIT 1
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE n <-[:`=`]- eq
-            CREATE UNIQUE n -[:`=i`]-> eq
+            CREATE UNIQUE (n) <-[:`=`]- (eq)
+            CREATE UNIQUE (n) -[:`=i`]-> (eq)
          )
 
          // at this point we collect all members
@@ -56,31 +56,31 @@ equivalence:
       cypher: |
          // find relation node
          MATCH (r:_:_Rel {id: {id}})
-         
+
          // find source, target nodes
          MATCH (s) -[x:`«type»`]-> (r) -[y:`«type»`]-> (t)
-         
+
          // remove the relation
          DELETE x, y, r
 
          // ok, wipe the old ECR
          WITH s, t LIMIT 1
-         
+
          // find current equivalence class representatives (ECR)
          OPTIONAL MATCH (s) <-[:`=`]- (se:`=`)
          OPTIONAL MATCH (t) <-[:`=`]- (te:`=`)
          OPTIONAL MATCH (se) -[a]- ()
          OPTIONAL MATCH (te) -[b]- ()
 
-         WITH s, t, se, te, collect(DISTINCT a) AS as, collect(DISTINCT b) AS bs 
+         WITH s, t, se, te, collect(DISTINCT a) AS as, collect(DISTINCT b) AS bs
 
          // wipe the arcs
          FOREACH(a IN as | DELETE a)
          FOREACH(b IN bs | DELETE b)
-         
+
          // delete the old ECRs
          DELETE se, te
-         
+
          // ensure that at this point we have only one row
          WITH s, t LIMIT 1
 
@@ -89,7 +89,7 @@ equivalence:
          MERGE (t) <-[:`=`]- (te:`=`)
 
          WITH s, t, se, te LIMIT 1
-         
+
          // s-size
          OPTIONAL MATCH (s) -[:`«type»` * 0 .. 4]- (n:_)
              WHERE NOT n:_Rel // skip the relation nodes
@@ -98,12 +98,12 @@ equivalence:
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE n <-[:`=`]- se
-            CREATE UNIQUE n -[:`=i`]-> se
+            CREATE UNIQUE (n) <-[:`=`]- (se)
+            CREATE UNIQUE (n) -[:`=i`]-> (se)
          )
 
          WITH s, t, se, te, count(ns) AS s_size LIMIT 1
-         
+
          OPTIONAL MATCH (t) -[:`«type»` * 0 .. 4]- (n:_)
              WHERE NOT n:_Rel // skip the relation nodes
 
@@ -111,8 +111,8 @@ equivalence:
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE n <-[:`=`]- te
-            CREATE UNIQUE n -[:`=i`]-> te
+            CREATE UNIQUE (n) <-[:`=`]- (te)
+            CREATE UNIQUE (n) -[:`=i`]-> (te)
          )
 
          // at this point we collect all members
@@ -193,7 +193,7 @@ arc:
          //MERGE (s) <-[:`=`]- (eq1:`=`)
          //MERGE (t) <-[:`=`]- (eq2:`=`)
          WITH s,t LIMIT 1
-         CREATE UNIQUE s -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> t
+         CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
          SET r = {data},
              r.created = timestamp(),
              r.id = {id},
@@ -270,16 +270,16 @@ query:
    graph:
       description: Node and edge list
       cypher: |
-         
+
          // match nodes and return {labels: .., id: ..}
          MATCH (n)
          WITH collect(DISTINCT {
             labels: labels(n),
             id: coalesce(n.id, "neo:" + id(n))
          }) AS nodes LIMIT 1
-         
+
          // match edges and return {s: .., t: ..}
-         OPTIONAL MATCH s -[e]-> t
+         OPTIONAL MATCH (s) -[e]-> (t)
          RETURN nodes, collect(DISTINCT {
            source: coalesce(s.id, "neo:" + id(s)),
            target: coalesce(t.id, "neo:" + id(t))
