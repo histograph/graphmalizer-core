@@ -47,8 +47,18 @@ function Graphmalizer (userConfig) {
     .fork()
     .map(batchCommit) // a -> stream b
     .series()
+    .errors(function (err, push) {
+        console.log('GRAPHMALIZER: caught Neo4j error:', err.message);
+        err_res = {};
+        err_res.results.length = -1;
+        err_res.duration_ms = -1;
+        err_res.results = {};
+        push(null,err_res);
+      })
     .map(function (r) {
-      console.log('GRAPHMALIZER =>', r.results.length, 'docs,', r.duration_ms + 'ms')
+      if( r.results.length !== -1 ){
+        console.log('GRAPHMALIZER =>', r.results.length, 'docs,', r.duration_ms + 'ms')
+      }
       return r
     })
     .pluck('results')
