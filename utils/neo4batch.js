@@ -1,9 +1,11 @@
-var log = require('./log');
-var R = require('ramda');
+const log = require('histograph-logging');
+const R = require('ramda');
 
-var http = require('http');
+const my_log = new log("graphmalizer");
 
-var defaults = {
+const http = require('http');
+
+const defaults = {
 	hostname: 'localhost',
 	port: 7474,
 	method: 'POST',
@@ -43,12 +45,12 @@ module.exports = function(options) {
 			res.setEncoding('utf8');
 
 			res.on('data', function (chunk) {
-				log("data");
+				my_log.debug("data");
 				result += chunk;
 			});
 
 			res.on('end', function() {
-				log("recv end", result.length);
+				my_log.debug("recv end: " + result.length);
 
 				// parse accumulated response
 				var resp = {};
@@ -75,7 +77,7 @@ module.exports = function(options) {
 				}
 				catch(e)
 				{
-					log('failed parsing result')
+					my_log.error('failed parsing result')
 					resp.error = e.stack;
 
 					// give some hint
@@ -83,7 +85,7 @@ module.exports = function(options) {
 						resp.errorHint = 'Got 401 Not Authorized, see README.md on authentication';
 				}
 
-				log("size", result.length);
+				my_log.debug("size: " + result.length);
 
 				// parsing duration
 				var t2 = ns_time();
@@ -95,15 +97,15 @@ module.exports = function(options) {
 		});
 
 		req.on('error', function(err) {
-			log("RECEIVED error EVENT");
+			my_log.error("RECEIVED error EVENT: " + err );
 			callback(err, null);
 		});
 
 		// write data to request body
-		log("writing");
+		my_log.debug("writing");
 		req.write(s);
 
-		log("send end");
+		my_log.debug("send end");
 		req.end();
 	};
 };
@@ -152,4 +154,3 @@ function unwrapResult(x){
 		});
 	});
 }
-
