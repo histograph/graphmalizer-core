@@ -17,7 +17,8 @@
     "highland": "^2.10.1",
     "js-yaml": "^3.7.0",
     "minimist": "^1.2.0",
-    "ramda": "^0.23.0"
+    "ramda": "^0.23.0",
+    "histograph-logging": "git+https://github.com/histograph/logging#puppetdeploy"
   },
   "devDependencies": {
     "faucet": "*",

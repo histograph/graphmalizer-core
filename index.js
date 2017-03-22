@@ -1,12 +1,20 @@
-var H = require('highland')
-var argv = require('minimist')
+const H = require('highland')
+const argv = require('minimist')
 
-var neoBatch = require('./utils/neo4batch')
-var Queries = require('./queries')
-var inputChecker = require('./input')
-var config = require('./config')
+const neoBatch = require('./utils/neo4batch')
+const Queries = require('./queries')
+const inputChecker = require('./input')
+const config = require('./config')
+
+const log = require("histograph-logging");
+
+const my_log = new log("graphmalizer");
+
 
 function Graphmalizer (userConfig) {
+
+  my_log.debug("In function Graphmalizer: " + JSON.stringify(userConfig));
+
   // store configuration with user overrides
   var conf = config(userConfig)
 
@@ -18,19 +26,22 @@ function Graphmalizer (userConfig) {
 
   // make query (uses config to determine type ~ structure mapping)
   function prepare (o) {
+    my_log.debug("In function prepare");
     try {
       var input = checkInput(o)
       var q = Queries.mkQuery(input)
 
       // we have win!
+      my_log.debug("Almost Out function prepare: " + JSON.stringify(q));
       return [q]
     } catch (err) {
       // other than spewing, we ignore errors
-      console.error(err.stack)
+      my_log.error(err.stack)
 
       // so this request will be flatmapped away
       return []
     }
+
   }
 
   // stream of input streams
@@ -48,7 +59,7 @@ function Graphmalizer (userConfig) {
     .map(batchCommit) // a -> stream b
     .series()
     .errors(function (err, push) {
-        console.log('GRAPHMALIZER: caught Neo4j error:', err.message);
+        my_log.error('GRAPHMALIZER: caught Neo4j error: ' + err.message);
         err_res = {};
         err_res.results.length = -1;
         err_res.duration_ms = -1;
@@ -57,7 +68,7 @@ function Graphmalizer (userConfig) {
       })
     .map(function (r) {
       if( r.results.length !== -1 ){
-        console.log('GRAPHMALIZER =>', r.results.length, 'docs,', r.duration_ms + 'ms')
+        my_log.info('GRAPHMALIZER => ' + r.results.length + ' docs, ' + r.duration_ms + 'ms')
       }
       return r
     })
@@ -82,6 +93,7 @@ function Graphmalizer (userConfig) {
       }
     })
 
+  my_log.debug("Out function Graphmalizer");
 // now that all streams are setup, ensure schema creatio
 // todo, actually this sucks because it cannot be run
 // in transaction with write
@@ -90,6 +102,7 @@ function Graphmalizer (userConfig) {
 
 // subscribe a stream to the graphmalizer
 Graphmalizer.prototype.register = function (stream) { // ensure valid arguments
+  my_log.debug("In function register");
   if (stream) {
     if (!H.isStream(stream)) {
       throw new Error('Must pass a (highland) stream')
@@ -98,12 +111,13 @@ Graphmalizer.prototype.register = function (stream) { // ensure valid arguments
     // register input stream
     this.inputs.write(stream)
   }
-
+  my_log.debug("Almost out function register");
   // return stream of all request-responses
   return this.system.fork()
 }
 
 Graphmalizer.prototype.shutdown = function () {
+  my_log.debug("In and Almost out function shutdown");
   // register input stream
   this.inputs.end()
 }
