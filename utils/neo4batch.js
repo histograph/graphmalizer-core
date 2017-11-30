@@ -93,7 +93,7 @@ module.exports = function(options) {
 
 				my_log.debug("Response from Neo4J: " + JSON.stringify(resp));
 
-				if (resp.errors || resp.errors.lenght > 0){
+				if (resp.errors !== null && resp.errors.lenght > 0) {
 					my_log.error("Response from Neo4J contains errors: " + JSON.stringify(resp));
 				}
 
