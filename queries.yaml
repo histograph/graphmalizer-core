@@ -32,7 +32,10 @@ equivalence:
          CREATE (eq:`=`)
 
          // create relation node
-         CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
+         // CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
+         MERGE (r:_:_Rel:`«type»` {id: {id}})
+         MERGE (s) -[:`«type»`]-> (r)
+         MERGE (r) -[:`«type»`]-> (t)
            SET r.dataset = {dataset}
 
          // find all nodes reachable under the equivalence relation
@@ -45,8 +48,10 @@ equivalence:
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE (n) <-[:`=`]- (eq)
-            CREATE UNIQUE (n) -[:`=i`]-> (eq)
+            // CREATE UNIQUE (n) <-[:`=`]- (eq)
+            // CREATE UNIQUE (n) -[:`=i`]-> (eq)
+            MERGE (n) <-[:`=`]- (eq)
+            MERGE (n) -[:`=i`]-> (eq)
          )
 
          // at this point we collect all members
@@ -98,8 +103,10 @@ equivalence:
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE (n) <-[:`=`]- (se)
-            CREATE UNIQUE (n) -[:`=i`]-> (se)
+            // CREATE UNIQUE (n) <-[:`=`]- (se)
+            // CREATE UNIQUE (n) -[:`=i`]-> (se)
+            MERGE (n) <-[:`=`]- (se)
+            MERGE (n) -[:`=i`]-> (se)
          )
 
          WITH s, t, se, te, count(ns) AS s_size LIMIT 1
@@ -111,8 +118,10 @@ equivalence:
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            CREATE UNIQUE (n) <-[:`=`]- (te)
-            CREATE UNIQUE (n) -[:`=i`]-> (te)
+            // CREATE UNIQUE (n) <-[:`=`]- (te)
+            // CREATE UNIQUE (n) -[:`=i`]-> (te)
+            MERGE (n) <-[:`=`]- (te)
+            MERGE (n) -[:`=i`]-> (te)
          )
 
          // at this point we collect all members
@@ -193,7 +202,10 @@ arc:
          //MERGE (s) <-[:`=`]- (eq1:`=`)
          //MERGE (t) <-[:`=`]- (eq2:`=`)
          WITH s,t LIMIT 1
-         CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
+         // CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
+         MERGE (r:_:_Rel:`«type»` {id: {id}})
+         MERGE (s) -[:`«type»`]-> (r)
+         MERGE (r) -[:`«type»`]-> (t)
          SET r = {data},
              r.created = timestamp(),
              r.id = {id},
