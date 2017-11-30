@@ -35,6 +35,8 @@ module.exports = function(options) {
 
 		var s = JSON.stringify({statements: statements});
 
+		my_log.debug("Statements to Neo4J: " + JSON.stringify(s));
+
 		// get timestamp and convert to nanoseconds
 		var t0 = ns_time();
 
@@ -45,7 +47,7 @@ module.exports = function(options) {
 			res.setEncoding('utf8');
 
 			res.on('data', function (chunk) {
-				my_log.debug("data");
+				my_log.debug("data: " + JSON.stringify(chunk));
 				result += chunk;
 			});
 
@@ -85,11 +87,11 @@ module.exports = function(options) {
 						resp.errorHint = 'Got 401 Not Authorized, see README.md on authentication';
 				}
 
-				my_log.debug("size: " + result.length);
-
 				// parsing duration
 				var t2 = ns_time();
 				resp.parse_ms = (t2 - t1) / 1e6;
+
+				my_log.debug("Response from Neo4J: " + JSON.stringify(resp));
 
 				// let caller know (or error)
 				callback(null, resp);

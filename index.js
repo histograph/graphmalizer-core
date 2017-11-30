@@ -36,10 +36,10 @@ function Graphmalizer (userConfig) {
       return [q]
     } catch (err) {
       // other than spewing, we ignore errors
-      my_log.error(err.stack)
+      my_log.error("Error in preparing for Graphmalizer: " + err + ", stack " + err.stack);
 
       // so this request will be flatmapped away
-      return []
+      return [];
     }
 
   }
@@ -87,6 +87,7 @@ function Graphmalizer (userConfig) {
   this.system = requests
     .zip(responses)
     .map(function (rr) {
+      my_log.debug("Mapping request " + JSON.stringify(rr[0]) + " with response " + JSON.stringify(rr[1]));    
       return {
         request: rr[0],
         response: rr[1]
@@ -113,7 +114,7 @@ Graphmalizer.prototype.register = function (stream) { // ensure valid arguments
   }
   my_log.debug("Almost out function register");
   // return stream of all request-responses
-  return this.system.fork()
+  return this.system.fork();
 }
 
 Graphmalizer.prototype.shutdown = function () {
