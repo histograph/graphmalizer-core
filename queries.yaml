@@ -68,64 +68,35 @@ equivalence:
          // remove the relation
          DELETE x, y, r
 
-         // ok, wipe the old ECR
-         WITH s, t LIMIT 1
+         // check the old ECR
+         WITH s, t
 
          // find current equivalence class representatives (ECR)
-         OPTIONAL MATCH (s) <-[:`=`]- (se:`=`)
-         OPTIONAL MATCH (t) <-[:`=`]- (te:`=`)
-         OPTIONAL MATCH (se) -[a]- ()
-         OPTIONAL MATCH (te) -[b]- ()
+         OPTIONAL MATCH (s) -[e1:`=`|`=i`]- (se:`=`)
+         OPTIONAL MATCH (t) -[e2:`=`|`=i`]- (te:`=`)
+         
+         // delete the equivalence relation
+         DELETE e1, e2
 
-         WITH s, t, se, te, collect(DISTINCT a) AS as, collect(DISTINCT b) AS bs
+         WITH s, t, se, te
 
-         // wipe the arcs
-         FOREACH(a IN as | DELETE a)
-         FOREACH(b IN bs | DELETE b)
+         // delete the equivalent node if it has 0 or 1 relation, and in the latter case delete the relation too
+         OPTIONAL MATCH (se) -[e3:`=`|`=i`]- ()
+         
+         WITH s, t, se, te, e3, count(e3) as cnt
+         WHERE cnt < 2
+         DELETE se, e3
 
-         // delete the old ECRs
-         DELETE se, te
+         WITH s, t, se, te
 
-         // ensure that at this point we have only one row
-         WITH s, t LIMIT 1
+         // delete the equivalent node if it has 0 or 1 relation, and in the latter case delete the relation too
+         OPTIONAL MATCH (te) -[e4:`=`|`=i`]- ()
 
-         // create equivalence class nodes for s and t
-         MERGE (s) <-[:`=`]- (se:`=`)
-         MERGE (t) <-[:`=`]- (te:`=`)
+         WITH s, t, se, te, e4, count(e4) as cnt
+         WHERE cnt < 2
+         DELETE te, e4
 
-         WITH s, t, se, te LIMIT 1
-
-         // s-size
-         OPTIONAL MATCH (s) -[:`«type»` * 0 .. 4]- (n:_)
-             WHERE NOT n:_Rel // skip the relation nodes
-
-         WITH s, t, se, te, collect(DISTINCT n) AS ns LIMIT 1
-
-         // link to new equivalence class representative
-         FOREACH (n IN ns |
-            // CREATE UNIQUE (n) <-[:`=`]- (se)
-            // CREATE UNIQUE (n) -[:`=i`]-> (se)
-            MERGE (n) <-[:`=`]- (se)
-            MERGE (n) -[:`=i`]-> (se)
-         )
-
-         WITH s, t, se, te, count(ns) AS s_size LIMIT 1
-
-         OPTIONAL MATCH (t) -[:`«type»` * 0 .. 4]- (n:_)
-             WHERE NOT n:_Rel // skip the relation nodes
-
-         WITH s, t, se, te, s_size, collect(DISTINCT n) AS ns LIMIT 1
-
-         // link to new equivalence class representative
-         FOREACH (n IN ns |
-            // CREATE UNIQUE (n) <-[:`=`]- (te)
-            // CREATE UNIQUE (n) -[:`=i`]-> (te)
-            MERGE (n) <-[:`=`]- (te)
-            MERGE (n) -[:`=i`]-> (te)
-         )
-
-         // at this point we collect all members
-         RETURN s, t, se, te, s_size, count(ns) AS t_size LIMIT 1
+         RETURN s, t, se, te
 
 node:
    add:
@@ -171,7 +142,7 @@ node:
          - '   (*) => x     '
          - ' --(*) => --( ) '
       cypher: |
-         MATCH (n:_ {id: {id}})
+         MATCH (n:_ {id: {id}}) - []
          WHERE NOT n:_VACANT
             SET n:_VACANT
             SET n={}

@@ -26,7 +26,7 @@ function Graphmalizer (userConfig) {
 
   // make query (uses config to determine type ~ structure mapping)
   function prepare (o) {
-    my_log.debug("In function prepare");
+    my_log.debug("In function prepare" + JSON.stringify(o));
     try {
       var input = checkInput(o)
       var q = Queries.mkQuery(input)
