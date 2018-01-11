@@ -177,9 +177,10 @@ node:
             SET n={}
             SET n.id = {id}
             SET n.dataset = {dataset}
+         RETURN n
          UNION ALL
          OPTIONAL MATCH (n:_:_VACANT {id: {id}})
-         WHERE length( (n)--() ) = 0
+         WHERE size( (n)--() ) = 0
          DELETE n
          RETURN n
 arc:
@@ -260,7 +261,7 @@ arc:
             DELETE p,q,r
          WITH s.id AS source, t.id AS target
          OPTIONAL MATCH (n:_:_VACANT)
-            WHERE n.id IN [target, source] AND length( (n)-[]-() ) = 0
+            WHERE n.id IN [target, source] AND size( (n)-[]-() ) = 0
             DELETE n
          RETURN true
 query:
