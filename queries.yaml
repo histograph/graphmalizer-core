@@ -8,7 +8,7 @@ equivalence:
          MERGE (t:_ {id: {target}})
            ON CREATE SET t :_:_VACANT
 
-         WITH s,t LIMIT 1
+         WITH s,t
 
          // find current equivalence class representatives (ECR)
          OPTIONAL MATCH (s) <-[:`=`]- (se:`=`)
@@ -26,7 +26,7 @@ equivalence:
          DELETE se, te
          
          // ensure that at this point we have only one row
-         WITH s, t LIMIT 1
+         WITH s, t
 
          // create equivalence class node
          CREATE (eq:`=`)
@@ -39,12 +39,12 @@ equivalence:
            SET r.dataset = {dataset}
 
          // find all nodes reachable under the equivalence relation
-         WITH s, t, r, eq LIMIT 1
+         WITH s, t, r, eq
 
          OPTIONAL MATCH (s) -[:`«type»` * 0 .. 4]- (n:_)
             WHERE NOT n:_Rel // skip the relation nodes
 
-         WITH s, t, r, eq, collect(DISTINCT n) AS ns LIMIT 1
+         WITH s, t, r, eq, collect(DISTINCT n) AS ns
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
@@ -69,7 +69,7 @@ equivalence:
          DELETE x, y, r
 
          // ok, wipe the old ECR
-         WITH s, t LIMIT 1
+         WITH s, t
 
          // find current equivalence class representatives (ECR)
          OPTIONAL MATCH (s) <-[:`=`]- (se:`=`)
@@ -87,46 +87,44 @@ equivalence:
          DELETE se, te
 
          // ensure that at this point we have only one row
-         WITH s, t LIMIT 1
-
-         // create equivalence class nodes for s and t
-         MERGE (s) <-[:`=`]- (se:`=`)
-         MERGE (t) <-[:`=`]- (te:`=`)
-
-         WITH s, t, se, te LIMIT 1
+         WITH s, t
 
          // s-size
-         OPTIONAL MATCH (s) -[:`«type»` * 0 .. 4]- (n:_)
+         OPTIONAL MATCH (s) -[:`«type»` * 1 .. 4]- (n:_)
              WHERE NOT n:_Rel // skip the relation nodes
 
-         WITH s, t, se, te, collect(DISTINCT n) AS ns LIMIT 1
+         WITH s, t, collect(DISTINCT n) AS ns, count(DISTINCT n) AS s_size
+
+         WHERE s_size > 0
+         // create equivalence class nodes for s
+         MERGE (s) <-[:`=`]- (se:`=`)
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            // CREATE UNIQUE (n) <-[:`=`]- (se)
-            // CREATE UNIQUE (n) -[:`=i`]-> (se)
             MERGE (n) <-[:`=`]- (se)
             MERGE (n) -[:`=i`]-> (se)
          )
 
-         WITH s, t, se, te, count(ns) AS s_size LIMIT 1
+         WITH s, t, se, s_size
 
-         OPTIONAL MATCH (t) -[:`«type»` * 0 .. 4]- (n:_)
+         OPTIONAL MATCH (t) -[:`«type»` * 1 .. 4]- (n:_)
              WHERE NOT n:_Rel // skip the relation nodes
 
-         WITH s, t, se, te, s_size, collect(DISTINCT n) AS ns LIMIT 1
+         WITH s, t, se, s_size, collect(DISTINCT n) AS ns, count(DISTINCT n) AS t_size
+
+         WHERE t_size > 0
+
+         // create equivalence class nodes for t
+         MERGE (t) <-[:`=`]- (te:`=`)
 
          // link to new equivalence class representative
          FOREACH (n IN ns |
-            // CREATE UNIQUE (n) <-[:`=`]- (te)
-            // CREATE UNIQUE (n) -[:`=i`]-> (te)
             MERGE (n) <-[:`=`]- (te)
             MERGE (n) -[:`=i`]-> (te)
          )
 
          // at this point we collect all members
-         RETURN s, t, se, te, s_size, count(ns) AS t_size LIMIT 1
-
+         RETURN s, t, se, te, s_size, t_size
 node:
    add:
       ruleset:
@@ -202,7 +200,7 @@ arc:
          ON CREATE SET t :_:_VACANT
          //MERGE (s) <-[:`=`]- (eq1:`=`)
          //MERGE (t) <-[:`=`]- (eq2:`=`)
-         WITH s,t LIMIT 1
+         WITH s,t
          // CREATE UNIQUE (s) -[:`«type»`]-> (r:_:_Rel:`«type»` {id: {id}}) -[:`«type»`]-> (t)
          MERGE (r:_:_Rel:`«type»` {id: {id}})
          MERGE (s) -[:`«type»`]-> (r)
@@ -275,10 +273,7 @@ query:
    clear:
       description: Remove all managed nodes and edges
       cypher: |
-         OPTIONAL MATCH ()-[e]-() DELETE e
-         RETURN DISTINCT true
-         UNION
-         OPTIONAL MATCH (n) DELETE n
+         MATCH (n) DETACH DELETE n
          RETURN DISTINCT true
    graph:
       description: Node and edge list
